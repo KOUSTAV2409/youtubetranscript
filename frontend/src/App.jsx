@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ResultCard from "./ResultCard.jsx";
+import SpringIn from "./SpringIn.jsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
@@ -17,6 +18,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [pressed, setPressed] = useState(false);
 
   async function analyze(force = false) {
     setError("");
@@ -50,64 +52,82 @@ export default function App() {
 
   return (
     <div className="page">
-      <div className="atmosphere" aria-hidden="true">
-        <div className="glow glow-amber" />
-        <div className="glow glow-steel" />
-        <div className="grain" />
-        <div className="vignette" />
-      </div>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <a className="logo" href="/">
+            Worth<span>Watch</span>
+          </a>
+          <span className="topbar-meta">pre-watch filter</span>
+        </div>
+        <div className="topbar-edge" aria-hidden="true" />
+      </header>
 
       <main className="shell">
-        <header className="brand-block">
-          <p className="brand">
-            Worth<span>Watch</span>
-          </p>
-          <h1>Paste a YouTube link. Find out if it&apos;s worth your time.</h1>
+        <section className="hero">
+          <p className="eyebrow">Judgment before play</p>
+          <h1>
+            Is this YouTube video
+            <em> worth </em>
+            your time?
+          </h1>
           <p className="lede">
-            We read the transcript and flag real value vs clickbait vs rage bait —
+            Paste a link. We read the transcript and flag real value, clickbait, and rage bait
             before you hit play.
           </p>
-        </header>
+        </section>
 
-        <form className={`paste-form ${loading ? "is-loading" : ""}`} onSubmit={onSubmit}>
-          <label htmlFor="yt-url" className="sr-only">
+        <form className="paste-form" onSubmit={onSubmit}>
+          <label className="field-label" htmlFor="yt-url">
             YouTube URL
           </label>
-          <div className="paste-field">
+          <div className="input-group">
             <input
               id="yt-url"
               type="url"
               required
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="https://youtube.com/watch?v=..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={loading}
             />
-            <button type="submit" disabled={loading || !url.trim()}>
-              {loading ? "Reading…" : "Is it worth it?"}
+            <button
+              className={`btn btn-primary ${pressed ? "is-pressed" : ""}`}
+              type="submit"
+              disabled={loading || !url.trim()}
+              onPointerDown={() => setPressed(true)}
+              onPointerUp={() => setPressed(false)}
+              onPointerCancel={() => setPressed(false)}
+              onPointerLeave={() => setPressed(false)}
+            >
+              {loading ? "Analyzing…" : "Analyze"}
             </button>
           </div>
-          <div className="progress-line" aria-hidden="true" />
+          {loading && (
+            <div className="progress-track" aria-hidden="true">
+              <div className="progress-fill" />
+            </div>
+          )}
         </form>
 
         {loading && (
           <p className="status" role="status">
-            Pulling metadata, transcript, and scoring…
+            fetching transcript · scoring substance
           </p>
         )}
 
         {error && (
-          <div className="error" role="alert">
-            <p>{error}</p>
+          <SpringIn className="alert" as="div" role="alert">
+            <p className="alert-title">Couldn’t analyze</p>
+            <p className="alert-body">{error}</p>
             <button
               type="button"
-              className="retry-btn"
+              className="btn btn-ghost"
               disabled={loading || !url.trim()}
               onClick={() => analyze(true)}
             >
-              Retry / Re-analyze
+              Retry
             </button>
-          </div>
+          </SpringIn>
         )}
 
         {result && (

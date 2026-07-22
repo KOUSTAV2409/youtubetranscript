@@ -1,138 +1,125 @@
+import SpringIn from "./SpringIn.jsx";
+import ScoreRing from "./ScoreRing.jsx";
+
 const VERDICT_COPY = {
   worth_it: "Worth watching",
-  mixed: "Mixed — proceed carefully",
-  skip: "Probably skip",
+  mixed: "Mixed",
+  skip: "Skip",
 };
 
 const LABEL_COPY = {
-  real_value: "Real value",
-  clickbait: "Clickbait risk",
-  rage_bait: "Rage bait",
-  mixed_signals: "Mixed signals",
+  real_value: "real value",
+  clickbait: "clickbait",
+  rage_bait: "rage bait",
+  mixed_signals: "mixed signals",
 };
 
-function ScoreRing({ score, verdict }) {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
-
-  return (
-    <div className={`score-ring verdict-${verdict}`} aria-label={`Worth score ${score} out of 100`}>
-      <svg viewBox="0 0 100 100" className="score-svg">
-        <circle className="score-track" cx="50" cy="50" r={radius} />
-        <circle
-          className="score-progress"
-          cx="50"
-          cy="50"
-          r={radius}
-          style={{
-            strokeDasharray: circumference,
-            strokeDashoffset: offset,
-          }}
-        />
-      </svg>
-      <div className="score-center">
-        <span className="score-num">{score}</span>
-        <span className="score-den">/100</span>
-      </div>
-    </div>
-  );
-}
-
 export default function ResultCard({ result, loading, onReanalyze }) {
-  const metaBits = [
-    result.channel,
-    result.duration_hint,
-    result.confidence,
-    result.cached ? "cached" : null,
-  ].filter(Boolean);
-
   return (
-    <section className={`result verdict-${result.verdict}`} aria-live="polite">
-      <div className="result-rule" aria-hidden="true" />
-
-      <div className="result-top">
+    <div className={`result-stack verdict-${result.verdict}`} aria-live="polite">
+      <SpringIn as="header" className="result-head" delay={0}>
         <div className="result-copy">
-          <p className="verdict-label">{VERDICT_COPY[result.verdict]}</p>
-          <h2>{result.title || `Video ${result.video_id}`}</h2>
+          <p className={`verdict-kicker verdict-kicker-${result.verdict}`}>
+            {VERDICT_COPY[result.verdict]}
+          </p>
+          <h2 className="result-title">{result.title || `Video ${result.video_id}`}</h2>
           <p className="meta">
-            {metaBits.map((bit, index) => (
-              <span key={bit}>
-                {index > 0 && <span className="meta-dot">·</span>}
-                {bit}
+            {result.channel && <span className="meta-channel">{result.channel}</span>}
+            {result.duration_hint && <span>{result.duration_hint}</span>}
+            <span>confidence {result.confidence}</span>
+            {result.cached && <span>cached</span>}
+          </p>
+          <p className="label-line">
+            {result.labels.map((label, i) => (
+              <span key={label}>
+                {i > 0 && <span className="label-sep">·</span>}
+                <span className={`label-text label-${label}`}>{LABEL_COPY[label] || label}</span>
               </span>
             ))}
           </p>
         </div>
-        <ScoreRing score={result.worth_score} verdict={result.verdict} />
-      </div>
 
-      <ul className="labels">
-        {result.labels.map((label) => (
-          <li key={label} className={`label label-${label}`}>
-            {LABEL_COPY[label] || label}
-          </li>
-        ))}
-      </ul>
+        <ScoreRing score={result.worth_score} verdict={result.verdict} />
+      </SpringIn>
 
       {(result.payoff_around || result.title_content_gap) && (
-        <div className="insight-row">
-          {result.payoff_around && (
-            <div className="insight">
-              <h3>Payoff around</h3>
-              <p>{result.payoff_around}</p>
-            </div>
-          )}
-          {result.title_content_gap && (
-            <div className="insight">
-              <h3>Title vs content</h3>
-              <p>{result.title_content_gap}</p>
-            </div>
-          )}
-        </div>
+        <SpringIn as="section" className="result-section" delay={40}>
+          <div className="grid-2">
+            {result.payoff_around && (
+              <div>
+                <h3>Payoff</h3>
+                <p className="panel-body panel-body-emphasis">{result.payoff_around}</p>
+              </div>
+            )}
+            {result.title_content_gap && (
+              <div>
+                <h3>Title vs content</h3>
+                <p className="panel-body">{result.title_content_gap}</p>
+              </div>
+            )}
+          </div>
+        </SpringIn>
       )}
 
-      <ul className="bullets">
-        {result.summary_bullets.map((bullet) => (
-          <li key={bullet}>{bullet}</li>
-        ))}
-      </ul>
+      <SpringIn as="section" className="result-section" delay={80}>
+        <h3 className="section-label">What you actually get</h3>
+        <ol className="bullets">
+          {result.summary_bullets.map((bullet, index) => (
+            <li key={bullet}>
+              <span className="bullet-index">{String(index + 1).padStart(2, "0")}</span>
+              <span className="bullet-text">{bullet}</span>
+            </li>
+          ))}
+        </ol>
+      </SpringIn>
 
-      <div className="guidance">
-        <div className="guidance-block watch">
-          <h3>Watch if</h3>
-          <p>{result.watch_if}</p>
+      <SpringIn as="section" className="result-section" delay={120}>
+        <div className="grid-2">
+          <div>
+            <h3 className="watch-label">Watch if</h3>
+            <p className="panel-body panel-body-emphasis">{result.watch_if}</p>
+          </div>
+          <div>
+            <h3 className="skip-label">Skip if</h3>
+            <p className="panel-body panel-body-emphasis">{result.skip_if}</p>
+          </div>
         </div>
-        <div className="guidance-block skip">
-          <h3>Skip if</h3>
-          <p>{result.skip_if}</p>
-        </div>
-      </div>
+      </SpringIn>
 
-      <p className="bait">{result.bait_risk}</p>
+      <SpringIn as="section" className="result-section" delay={160}>
+        <p className="bait">
+          <span className="bait-label">Bait risk</span>
+          {result.bait_risk}
+        </p>
+      </SpringIn>
 
       {result.evidence_quotes?.length > 0 && (
-        <div className="quotes">
-          <h3>Evidence from transcript</h3>
+        <SpringIn as="section" className="result-section" delay={200}>
+          <h3 className="section-label">From the transcript</h3>
           {result.evidence_quotes.map((quote) => (
             <blockquote key={quote}>{quote}</blockquote>
           ))}
-        </div>
+        </SpringIn>
       )}
 
-      <div className="result-actions">
-        <button type="button" className="ghost-btn" disabled={loading} onClick={onReanalyze}>
+      <SpringIn as="footer" className="result-actions" delay={240}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={loading}
+          onClick={onReanalyze}
+        >
           {loading ? "Re-analyzing…" : "Re-analyze"}
         </button>
         <a
-          className="ghost-link"
+          className="btn btn-ghost"
           href={`https://www.youtube.com/watch?v=${result.video_id}`}
           target="_blank"
           rel="noreferrer"
         >
           Open on YouTube
         </a>
-      </div>
-    </section>
+      </SpringIn>
+    </div>
   );
 }

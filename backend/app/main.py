@@ -1,0 +1,69 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from .analyzer import analyze_video
+from .cache import AnalysisCache
+from .config import settings
+from .models import AnalyzeRequest, AnalyzeResponse, ErrorResponse
+from .youtube import extract_video_id, fetch_transcript
+
+cache = AnalysisCache(settings.database_path)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await cache.init()
+    yield
+
+
+app = FastAPI(title="WorthWatch API", version="0.1.0", lifespan=lifespan)
+
+origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins or ["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+async def health():
+    return {"ok": True, "service": "worthwatch"}
+
+
+@app.post(
+    "/analyze",
+    response_model=AnalyzeResponse,
+    responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
+)
+async def analyze(body: AnalyzeRequest):
+    url = str(body.url)
+    try:
+        video_id = extract_video_id(url)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    cached = await cache.get(video_id)
+    if cached:
+        return AnalyzeResponse(result=cached)
+
+    try:
+        transcript = fetch_transcript(video_id, settings.max_transcript_chars)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Transcript fetch failed: {exc}") from exc
+
+    try:
+        result = analyze_video(transcript)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
+
+    await cache.set(result)
+    return AnalyzeResponse(result=result)

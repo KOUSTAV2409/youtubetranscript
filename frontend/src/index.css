@@ -1,0 +1,339 @@
+:root {
+  --bg0: #1a2332;
+  --bg1: #243447;
+  --ink: #f3efe6;
+  --muted: #b8c0cc;
+  --accent: #e8a54b;
+  --good: #6fbf8f;
+  --warn: #e0b35a;
+  --bad: #e07a6a;
+  --line: rgba(243, 239, 230, 0.14);
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg0);
+}
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 55% at 15% 10%, rgba(232, 165, 75, 0.22), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(90, 140, 180, 0.18), transparent 50%),
+    linear-gradient(165deg, #1a2332 0%, #243447 48%, #15202b 100%);
+  pointer-events: none;
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: min(720px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 4.5rem 0 5rem;
+  animation: rise 0.7s ease both;
+}
+
+.brand-block {
+  margin-bottom: 2rem;
+}
+
+.brand {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.brand-block h1 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-body);
+  font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.lede {
+  margin: 0;
+  max-width: 38rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.paste-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.paste-form input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(15, 22, 32, 0.55);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 0.95rem 1rem;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.paste-form input:focus {
+  border-color: rgba(232, 165, 75, 0.7);
+  box-shadow: 0 0 0 3px rgba(232, 165, 75, 0.15);
+}
+
+.paste-form button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.95rem 1.2rem;
+  background: var(--accent);
+  color: #1a1820;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.paste-form button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.paste-form button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.status,
+.error {
+  margin: 0 0 1rem;
+}
+
+.status {
+  color: var(--muted);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.error {
+  color: #ffb4a8;
+  background: rgba(224, 122, 106, 0.12);
+  border: 1px solid rgba(224, 122, 106, 0.35);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.result {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  animation: rise 0.55s ease both;
+}
+
+.result-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.verdict-label {
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.verdict-worth_it .verdict-label {
+  color: var(--good);
+}
+
+.verdict-mixed .verdict-label {
+  color: var(--warn);
+}
+
+.verdict-skip .verdict-label {
+  color: var(--bad);
+}
+
+.result h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  line-height: 1.25;
+}
+
+.meta {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.score {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.score-num {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-den {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 1.1rem 0 0;
+  padding: 0;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.28rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.label-real_value {
+  color: var(--good);
+  border-color: rgba(111, 191, 143, 0.4);
+}
+
+.label-clickbait,
+.label-rage_bait {
+  color: var(--bad);
+  border-color: rgba(224, 122, 106, 0.4);
+}
+
+.label-mixed_signals {
+  color: var(--warn);
+  border-color: rgba(224, 179, 90, 0.4);
+}
+
+.bullets {
+  margin: 1.25rem 0 0;
+  padding-left: 1.15rem;
+  line-height: 1.5;
+}
+
+.guidance {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.4rem;
+}
+
+.guidance h3,
+.quotes h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.guidance p,
+.bait {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.bait {
+  margin-top: 1.2rem;
+  color: var(--muted);
+}
+
+.quotes {
+  margin-top: 1.35rem;
+}
+
+.quotes blockquote {
+  margin: 0.55rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid rgba(232, 165, 75, 0.55);
+  background: rgba(15, 22, 32, 0.4);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding-top: 2.75rem;
+  }
+
+  .paste-form {
+    grid-template-columns: 1fr;
+  }
+
+  .guidance {
+    grid-template-columns: 1fr;
+  }
+}

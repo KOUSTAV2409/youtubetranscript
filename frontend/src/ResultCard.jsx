@@ -11,26 +11,60 @@ const LABEL_COPY = {
   mixed_signals: "Mixed signals",
 };
 
+function ScoreRing({ score, verdict }) {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
+
+  return (
+    <div className={`score-ring verdict-${verdict}`} aria-label={`Worth score ${score} out of 100`}>
+      <svg viewBox="0 0 100 100" className="score-svg">
+        <circle className="score-track" cx="50" cy="50" r={radius} />
+        <circle
+          className="score-progress"
+          cx="50"
+          cy="50"
+          r={radius}
+          style={{
+            strokeDasharray: circumference,
+            strokeDashoffset: offset,
+          }}
+        />
+      </svg>
+      <div className="score-center">
+        <span className="score-num">{score}</span>
+        <span className="score-den">/100</span>
+      </div>
+    </div>
+  );
+}
+
 export default function ResultCard({ result, loading, onReanalyze }) {
   const metaBits = [
     result.channel,
-    result.duration_hint ? `Duration ${result.duration_hint}` : null,
-    `Confidence: ${result.confidence}`,
+    result.duration_hint,
+    result.confidence,
     result.cached ? "cached" : null,
   ].filter(Boolean);
 
   return (
     <section className={`result verdict-${result.verdict}`} aria-live="polite">
+      <div className="result-rule" aria-hidden="true" />
+
       <div className="result-top">
-        <div>
+        <div className="result-copy">
           <p className="verdict-label">{VERDICT_COPY[result.verdict]}</p>
           <h2>{result.title || `Video ${result.video_id}`}</h2>
-          <p className="meta">{metaBits.join(" · ")}</p>
+          <p className="meta">
+            {metaBits.map((bit, index) => (
+              <span key={bit}>
+                {index > 0 && <span className="meta-dot">·</span>}
+                {bit}
+              </span>
+            ))}
+          </p>
         </div>
-        <div className="score" aria-label={`Worth score ${result.worth_score} out of 100`}>
-          <span className="score-num">{result.worth_score}</span>
-          <span className="score-den">/100</span>
-        </div>
+        <ScoreRing score={result.worth_score} verdict={result.verdict} />
       </div>
 
       <ul className="labels">
@@ -44,13 +78,13 @@ export default function ResultCard({ result, loading, onReanalyze }) {
       {(result.payoff_around || result.title_content_gap) && (
         <div className="insight-row">
           {result.payoff_around && (
-            <div>
+            <div className="insight">
               <h3>Payoff around</h3>
               <p>{result.payoff_around}</p>
             </div>
           )}
           {result.title_content_gap && (
-            <div>
+            <div className="insight">
               <h3>Title vs content</h3>
               <p>{result.title_content_gap}</p>
             </div>
@@ -65,11 +99,11 @@ export default function ResultCard({ result, loading, onReanalyze }) {
       </ul>
 
       <div className="guidance">
-        <div>
+        <div className="guidance-block watch">
           <h3>Watch if</h3>
           <p>{result.watch_if}</p>
         </div>
-        <div>
+        <div className="guidance-block skip">
           <h3>Skip if</h3>
           <p>{result.skip_if}</p>
         </div>
@@ -88,7 +122,7 @@ export default function ResultCard({ result, loading, onReanalyze }) {
 
       <div className="result-actions">
         <button type="button" className="ghost-btn" disabled={loading} onClick={onReanalyze}>
-          {loading ? "Re-analyzing…" : "Re-analyze (skip cache)"}
+          {loading ? "Re-analyzing…" : "Re-analyze"}
         </button>
         <a
           className="ghost-link"

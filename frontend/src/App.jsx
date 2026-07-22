@@ -50,10 +50,18 @@ export default function App() {
 
   return (
     <div className="page">
-      <div className="atmosphere" aria-hidden="true" />
+      <div className="atmosphere" aria-hidden="true">
+        <div className="glow glow-amber" />
+        <div className="glow glow-steel" />
+        <div className="grain" />
+        <div className="vignette" />
+      </div>
+
       <main className="shell">
         <header className="brand-block">
-          <p className="brand">WorthWatch</p>
+          <p className="brand">
+            Worth<span>Watch</span>
+          </p>
           <h1>Paste a YouTube link. Find out if it&apos;s worth your time.</h1>
           <p className="lede">
             We read the transcript and flag real value vs clickbait vs rage bait —
@@ -61,27 +69,30 @@ export default function App() {
           </p>
         </header>
 
-        <form className="paste-form" onSubmit={onSubmit}>
+        <form className={`paste-form ${loading ? "is-loading" : ""}`} onSubmit={onSubmit}>
           <label htmlFor="yt-url" className="sr-only">
             YouTube URL
           </label>
-          <input
-            id="yt-url"
-            type="url"
-            required
-            placeholder="https://www.youtube.com/watch?v=..."
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={loading}
-          />
-          <button type="submit" disabled={loading || !url.trim()}>
-            {loading ? "Analyzing…" : "Is it worth it?"}
-          </button>
+          <div className="paste-field">
+            <input
+              id="yt-url"
+              type="url"
+              required
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={loading}
+            />
+            <button type="submit" disabled={loading || !url.trim()}>
+              {loading ? "Reading…" : "Is it worth it?"}
+            </button>
+          </div>
+          <div className="progress-line" aria-hidden="true" />
         </form>
 
         {loading && (
           <p className="status" role="status">
-            Pulling metadata, transcript, and scoring the video…
+            Pulling metadata, transcript, and scoring…
           </p>
         )}
 

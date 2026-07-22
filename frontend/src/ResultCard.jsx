@@ -11,18 +11,21 @@ const LABEL_COPY = {
   mixed_signals: "Mixed signals",
 };
 
-export default function ResultCard({ result }) {
+export default function ResultCard({ result, loading, onReanalyze }) {
+  const metaBits = [
+    result.channel,
+    result.duration_hint ? `Duration ${result.duration_hint}` : null,
+    `Confidence: ${result.confidence}`,
+    result.cached ? "cached" : null,
+  ].filter(Boolean);
+
   return (
     <section className={`result verdict-${result.verdict}`} aria-live="polite">
       <div className="result-top">
         <div>
           <p className="verdict-label">{VERDICT_COPY[result.verdict]}</p>
-          {result.title && <h2>{result.title}</h2>}
-          {!result.title && <h2>Video {result.video_id}</h2>}
-          <p className="meta">
-            Confidence: {result.confidence}
-            {result.cached ? " · cached" : ""}
-          </p>
+          <h2>{result.title || `Video ${result.video_id}`}</h2>
+          <p className="meta">{metaBits.join(" · ")}</p>
         </div>
         <div className="score" aria-label={`Worth score ${result.worth_score} out of 100`}>
           <span className="score-num">{result.worth_score}</span>
@@ -37,6 +40,23 @@ export default function ResultCard({ result }) {
           </li>
         ))}
       </ul>
+
+      {(result.payoff_around || result.title_content_gap) && (
+        <div className="insight-row">
+          {result.payoff_around && (
+            <div>
+              <h3>Payoff around</h3>
+              <p>{result.payoff_around}</p>
+            </div>
+          )}
+          {result.title_content_gap && (
+            <div>
+              <h3>Title vs content</h3>
+              <p>{result.title_content_gap}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <ul className="bullets">
         {result.summary_bullets.map((bullet) => (
@@ -65,6 +85,20 @@ export default function ResultCard({ result }) {
           ))}
         </div>
       )}
+
+      <div className="result-actions">
+        <button type="button" className="ghost-btn" disabled={loading} onClick={onReanalyze}>
+          {loading ? "Re-analyzing…" : "Re-analyze (skip cache)"}
+        </button>
+        <a
+          className="ghost-link"
+          href={`https://www.youtube.com/watch?v=${result.video_id}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open on YouTube
+        </a>
+      </div>
     </section>
   );
 }

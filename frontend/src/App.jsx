@@ -3,28 +3,36 @@ import ResultCard from "./ResultCard.jsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
+function formatApiError(data, fallback = "Analysis failed") {
+  const detail = data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((item) => item.msg || JSON.stringify(item)).join(" ");
+  }
+  return data?.error || fallback;
+}
+
 export default function App() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
 
-  async function onSubmit(event) {
-    event.preventDefault();
+  async function analyze(force = false) {
     setError("");
-    setResult(null);
+    if (!force) setResult(null);
     setLoading(true);
 
     try {
       const response = await fetch(`${API_BASE}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, force }),
       });
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || data.error || "Analysis failed");
+        throw new Error(formatApiError(data));
       }
 
       setResult(data.result);
@@ -33,6 +41,11 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function onSubmit(event) {
+    event.preventDefault();
+    analyze(false);
   }
 
   return (
@@ -68,17 +81,31 @@ export default function App() {
 
         {loading && (
           <p className="status" role="status">
-            Pulling transcript and scoring the video…
+            Pulling metadata, transcript, and scoring the video…
           </p>
         )}
 
         {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
+          <div className="error" role="alert">
+            <p>{error}</p>
+            <button
+              type="button"
+              className="retry-btn"
+              disabled={loading || !url.trim()}
+              onClick={() => analyze(true)}
+            >
+              Retry / Re-analyze
+            </button>
+          </div>
         )}
 
-        {result && <ResultCard result={result} />}
+        {result && (
+          <ResultCard
+            result={result}
+            loading={loading}
+            onReanalyze={() => analyze(true)}
+          />
+        )}
       </main>
     </div>
   );

@@ -147,6 +147,41 @@ body {
   padding: 0.85rem 1rem;
 }
 
+.error p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.retry-btn,
+.ghost-btn {
+  margin-top: 0.75rem;
+  border: 1px solid rgba(255, 180, 168, 0.45);
+  background: transparent;
+  color: #ffb4a8;
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retry-btn:disabled,
+.ghost-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ghost-btn {
+  border-color: var(--line);
+  color: var(--ink);
+  margin-top: 0;
+}
+
+.ghost-btn:hover:not(:disabled),
+.retry-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
 .result {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
@@ -260,6 +295,7 @@ body {
 }
 
 .guidance h3,
+.insight-row h3,
 .quotes h3 {
   margin: 0 0 0.35rem;
   font-size: 0.78rem;
@@ -277,6 +313,36 @@ body {
 .bait {
   margin-top: 1.2rem;
   color: var(--muted);
+}
+
+.insight-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.insight-row p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.ghost-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ghost-link:hover {
+  text-decoration: underline;
 }
 
 .quotes {
@@ -334,6 +400,10 @@ body {
   }
 
   .guidance {
+    grid-template-columns: 1fr;
+  }
+
+  .insight-row {
     grid-template-columns: 1fr;
   }
 }

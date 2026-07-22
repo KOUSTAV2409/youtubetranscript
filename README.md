@@ -49,4 +49,12 @@ Open http://localhost:5173
 
 Returns a structured verdict (`worth_score`, labels, watch/skip guidance, transcript evidence).
 
-Same `video_id` is cached in SQLite for instant replays.
+Same `video_id` is cached in SQLite for instant replays. Send `"force": true` to bypass cache and re-analyze.
+
+### Phase 1 result fields
+
+- Real **title** + **channel** (oEmbed + yt-dlp)
+- **duration_hint**
+- **title_content_gap** (title promise vs transcript)
+- **payoff_around** (when value starts)
+- UI **Re-analyze** button + clearer transcript errors

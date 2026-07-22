@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 class AnalyzeRequest(BaseModel):
     url: HttpUrl
+    force: bool = False
 
 
 Verdict = Literal["worth_it", "mixed", "skip"]
@@ -16,6 +17,7 @@ class AnalysisResult(BaseModel):
     title: str | None = None
     channel: str | None = None
     duration_hint: str | None = None
+    duration_seconds: int | None = None
     verdict: Verdict
     worth_score: int = Field(ge=0, le=100)
     labels: list[Label]
@@ -24,6 +26,8 @@ class AnalysisResult(BaseModel):
     watch_if: str
     skip_if: str
     bait_risk: str
+    title_content_gap: str | None = None
+    payoff_around: str | None = None
     evidence_quotes: list[str] = Field(default_factory=list, max_length=5)
     cached: bool = False
 

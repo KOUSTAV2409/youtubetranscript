@@ -54,8 +54,27 @@ export default function App() {
     <div className="page">
       <header className="topbar">
         <div className="topbar-inner">
-          <a className="logo" href="/">
-            Worth<span>Watch</span>
+          <a className="logo" href="/" aria-label="WorthWatch home">
+            <span className="logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="13" stroke="currentColor" strokeWidth="2" opacity="0.35" />
+                <path
+                  className="logo-arc"
+                  d="M16 3a13 13 0 0 1 13 13"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  className="logo-play"
+                  d="M13.2 11.2v9.6L21.2 16 13.2 11.2z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <span className="logo-word">
+              Worth<span>Watch</span>
+            </span>
           </a>
           <span className="topbar-meta">pre-watch filter</span>
         </div>

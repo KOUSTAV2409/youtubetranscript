@@ -1,24 +1,24 @@
-# WorthWatch API — deploy with Render Blueprint
-# Dashboard: New → Blueprint → select this repo
-# After Vercel deploy, set CORS_ORIGINS to your real frontend URL.
+# WorthWatch API on Render (Docker — reliable for yt-dlp + FastAPI)
+# Dashboard: New → Blueprint → this repo, branch `koustav`
+# Set OPENAI_API_KEY in the dashboard after create.
 
 services:
   - type: web
     name: worthwatch-backend
-    runtime: python
+    runtime: docker
     plan: free
+    branch: koustav
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
+    autoDeployTrigger: commit
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.3"
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
       - key: CORS_ORIGINS
-        sync: false
+        value: "*"
       - key: DATABASE_PATH
-        value: data/cache.db
+        value: /app/data/cache.db

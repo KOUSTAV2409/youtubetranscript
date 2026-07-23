@@ -21,10 +21,13 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="WorthWatch API", version="0.2.0", lifespan=lifespan)
 
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+# Empty or "*" → allow all (first deploy / Vercel preview friendly).
+# Credentials must be off when using wildcard origins.
+allow_all = not origins or origins == ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins or ["http://localhost:5173"],
-    allow_credentials=True,
+    allow_origins=["*"] if allow_all else origins,
+    allow_credentials=not allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )

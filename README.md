@@ -43,17 +43,17 @@ Open http://localhost:5173
 
 ### Backend on Render
 
-1. Push this repo to GitHub.
-2. [Render](https://render.com) → **New → Blueprint** → select the repo (uses `render.yaml`),  
-   **or** **New → Web Service** with:
-   - Root directory: `backend`
-   - Build: `pip install -r requirements.txt`
-   - Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-3. Set env vars in the dashboard:
-   - `OPENAI_API_KEY` (required)
-   - `CORS_ORIGINS` = your Vercel URL, e.g. `https://your-app.vercel.app`
-   - `DATABASE_PATH` = `data/cache.db` (ephemeral on free tier)
-4. Confirm `GET /health` returns `{"ok": true}`.
+**Preferred:** Docker Blueprint (`render.yaml` → `runtime: docker`, branch `koustav`).
+
+1. Push this repo; open [Render → New → Blueprint](https://dashboard.render.com/blueprints).
+2. Select repo **youtubetranscript**, branch **`koustav`**.
+3. Apply the Blueprint (`worthwatch-backend`).
+4. In the service → **Environment**, set `OPENAI_API_KEY`.
+5. Deploy → open `https://<service>.onrender.com/health` (expect `{"ok":true}`).
+
+`CORS_ORIGINS` defaults to `*` so the Vercel frontend can call the API immediately. Tighten it to your Vercel URL later.
+
+**Manual Web Service (no Blueprint):** root `backend`, Docker runtime, Dockerfile path `./Dockerfile`, same env vars.
 
 ### Frontend on Vercel
 

@@ -12,6 +12,14 @@ const LABEL_COPY = {
   clickbait: "clickbait",
   rage_bait: "rage bait",
   mixed_signals: "mixed signals",
+  satire_packaging: "satire packaging",
+};
+
+const PACKAGING_COPY = {
+  straight: null,
+  ironic_satire: "Ironic title — joke on the box, value inside",
+  hype_clickbait: "Hype packaging",
+  rage: "Rage packaging",
 };
 
 export default function ResultCard({ result, loading, onReanalyze }) {
@@ -37,13 +45,31 @@ export default function ResultCard({ result, loading, onReanalyze }) {
               </span>
             ))}
           </p>
+          {(result.packaging_note || PACKAGING_COPY[result.packaging_style]) && (
+            <p className={`packaging-note style-${result.packaging_style || "straight"}`}>
+              {result.packaging_note || PACKAGING_COPY[result.packaging_style]}
+            </p>
+          )}
         </div>
 
         <ScoreRing score={result.worth_score} verdict={result.verdict} />
       </SpringIn>
 
+      <SpringIn as="section" className="result-section" delay={40}>
+        <div className="grid-2">
+          <div>
+            <h3 className="watch-label">Watch if</h3>
+            <p className="panel-body panel-body-emphasis">{result.watch_if}</p>
+          </div>
+          <div>
+            <h3 className="skip-label">Skip if</h3>
+            <p className="panel-body panel-body-emphasis">{result.skip_if}</p>
+          </div>
+        </div>
+      </SpringIn>
+
       {(result.payoff_around || result.title_content_gap) && (
-        <SpringIn as="section" className="result-section" delay={40}>
+        <SpringIn as="section" className="result-section" delay={80}>
           <div className="grid-2">
             {result.payoff_around && (
               <div>
@@ -61,7 +87,7 @@ export default function ResultCard({ result, loading, onReanalyze }) {
         </SpringIn>
       )}
 
-      <SpringIn as="section" className="result-section" delay={80}>
+      <SpringIn as="section" className="result-section" delay={120}>
         <h3 className="section-label">What you actually get</h3>
         <ol className="bullets">
           {result.summary_bullets.map((bullet, index) => (
@@ -71,19 +97,6 @@ export default function ResultCard({ result, loading, onReanalyze }) {
             </li>
           ))}
         </ol>
-      </SpringIn>
-
-      <SpringIn as="section" className="result-section" delay={120}>
-        <div className="grid-2">
-          <div>
-            <h3 className="watch-label">Watch if</h3>
-            <p className="panel-body panel-body-emphasis">{result.watch_if}</p>
-          </div>
-          <div>
-            <h3 className="skip-label">Skip if</h3>
-            <p className="panel-body panel-body-emphasis">{result.skip_if}</p>
-          </div>
-        </div>
       </SpringIn>
 
       <SpringIn as="section" className="result-section" delay={160}>

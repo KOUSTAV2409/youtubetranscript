@@ -9,7 +9,14 @@ class AnalyzeRequest(BaseModel):
 
 
 Verdict = Literal["worth_it", "mixed", "skip"]
-Label = Literal["real_value", "clickbait", "rage_bait", "mixed_signals"]
+Label = Literal[
+    "real_value",
+    "clickbait",
+    "rage_bait",
+    "mixed_signals",
+    "satire_packaging",
+]
+PackagingStyle = Literal["straight", "ironic_satire", "hype_clickbait", "rage"]
 
 
 class AnalysisResult(BaseModel):
@@ -22,6 +29,8 @@ class AnalysisResult(BaseModel):
     worth_score: int = Field(ge=0, le=100)
     labels: list[Label]
     confidence: Literal["high", "medium", "low"]
+    packaging_style: PackagingStyle = "straight"
+    packaging_note: str | None = None
     summary_bullets: list[str] = Field(min_length=1, max_length=5)
     watch_if: str
     skip_if: str

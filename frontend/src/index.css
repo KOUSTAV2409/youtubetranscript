@@ -473,6 +473,30 @@ input[type="url"]:disabled {
   color: var(--warn);
 }
 
+.label-satire_packaging {
+  color: var(--accent-warm);
+}
+
+.packaging-note {
+  margin: 0.85rem 0 0;
+  max-width: 36rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: #d7dee8;
+}
+
+.packaging-note.style-ironic_satire {
+  color: var(--accent-warm);
+}
+
+.packaging-note.style-hype_clickbait,
+.packaging-note.style-rage {
+  color: var(--bad);
+}
+
 .score-ring {
   position: relative;
   flex-shrink: 0;

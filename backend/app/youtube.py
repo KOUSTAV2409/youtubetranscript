@@ -1,6 +1,6 @@
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from xml.etree.ElementTree import ParseError
 
 import httpx
@@ -18,6 +18,8 @@ class VideoTranscript:
     language: str | None
     text: str
     char_count: int
+    duration_seconds: int | None = None
+    duration_hint: str | None = None
 
 
 def extract_video_id(url: str) -> str:
@@ -27,18 +29,110 @@ def extract_video_id(url: str) -> str:
     return match.group(1)
 
 
+def format_duration(seconds: int) -> str:
+    hours, rem = divmod(int(seconds), 3600)
+    minutes, secs = divmod(rem, 60)
+    if hours:
+        return f"{hours}h {minutes}m"
+    if minutes:
+        return f"{minutes}m {secs:02d}s" if secs else f"{minutes}m"
+    return f"{secs}s"
+
+
 def _normalize_text(parts: list[str], max_chars: int) -> str:
     text = re.sub(r"\s+", " ", " ".join(p.strip() for p in parts if p and p.strip())).strip()
     if not text:
-        raise ValueError("Transcript was empty.")
+        raise ValueError(
+            "This video's captions came back empty. Try another video, or hit Re-analyze in a minute."
+        )
     return text[:max_chars]
 
 
+def _friendly_transcript_error(raw: str) -> str:
+    lower = raw.lower()
+    if "blocked" in lower or "ip" in lower:
+        return (
+            "YouTube temporarily blocked transcript access from this network. "
+            "Wait a minute and try Re-analyze, or switch networks."
+        )
+    if "disabled" in lower:
+        return "Captions are disabled on this video, so we can't judge it yet."
+    if "unavailable" in lower:
+        return "This video looks unavailable or private."
+    if "no transcript" in lower or "no caption" in lower or "no subtitles" in lower:
+        return (
+            "No captions found for this video. WorthWatch needs a transcript — "
+            "try a video with subtitles turned on."
+        )
+    if "empty" in lower:
+        return (
+            "YouTube returned an empty transcript response. "
+            "This is usually temporary — try Re-analyze shortly."
+        )
+    return raw
+
+
+def fetch_metadata(video_id: str) -> dict:
+    """Title/channel via oEmbed; duration via yt-dlp when available."""
+    meta: dict = {
+        "title": None,
+        "channel": None,
+        "duration_seconds": None,
+        "duration_hint": None,
+    }
+
+    watch_url = f"https://www.youtube.com/watch?v={video_id}"
+    try:
+        response = httpx.get(
+            "https://www.youtube.com/oembed",
+            params={"url": watch_url, "format": "json"},
+            timeout=12.0,
+            follow_redirects=True,
+        )
+        if response.status_code == 200:
+            data = response.json()
+            meta["title"] = data.get("title")
+            meta["channel"] = data.get("author_name")
+    except Exception:  # noqa: BLE001
+        pass
+
+    try:
+        import yt_dlp
+
+        opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "noplaylist": True,
+        }
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(watch_url, download=False)
+        meta["title"] = meta["title"] or info.get("title")
+        meta["channel"] = meta["channel"] or info.get("uploader") or info.get("channel")
+        duration = info.get("duration")
+        if isinstance(duration, (int, float)) and duration > 0:
+            seconds = int(duration)
+            meta["duration_seconds"] = seconds
+            meta["duration_hint"] = format_duration(seconds)
+    except Exception:  # noqa: BLE001
+        pass
+
+    return meta
+
+
+def enrich_with_metadata(transcript: VideoTranscript, meta: dict) -> VideoTranscript:
+    return replace(
+        transcript,
+        title=transcript.title or meta.get("title"),
+        channel=transcript.channel or meta.get("channel"),
+        duration_seconds=transcript.duration_seconds or meta.get("duration_seconds"),
+        duration_hint=transcript.duration_hint or meta.get("duration_hint"),
+    )
+
+
 def _fetch_via_transcript_api(video_id: str, max_chars: int) -> VideoTranscript:
-    """Primary path: youtube-transcript-api (v1+ preferred)."""
     from youtube_transcript_api import YouTubeTranscriptApi
 
-    # 0.6.x exposes classmethods like list_transcripts; v1 uses instance .fetch/.list
     if hasattr(YouTubeTranscriptApi, "list_transcripts"):
         return _fetch_via_legacy_api(video_id, max_chars)
 
@@ -55,19 +149,15 @@ def _fetch_via_transcript_api(video_id: str, max_chars: int) -> VideoTranscript:
         api = YouTubeTranscriptApi()
         fetched = api.fetch(video_id, languages=["en", "en-US", "en-GB"])
     except (TranscriptsDisabled, VideoUnavailable, NoTranscriptFound) as exc:
-        raise ValueError(str(exc) or "No transcript available for this video.") from exc
+        raise ValueError(_friendly_transcript_error(str(exc) or "No transcript available.")) from exc
     except (RequestBlocked, IpBlocked) as exc:
-        raise ValueError(
-            "YouTube blocked transcript requests from this IP. Try again later or use a different network."
-        ) from exc
+        raise ValueError(_friendly_transcript_error("blocked")) from exc
     except YouTubeRequestFailed as exc:
-        raise ValueError(f"YouTube request failed while fetching transcript: {exc}") from exc
+        raise ValueError(_friendly_transcript_error(str(exc))) from exc
     except ParseError as exc:
-        raise ValueError(
-            "YouTube returned an empty transcript response. Retrying via yt-dlp fallback."
-        ) from exc
+        raise ValueError(_friendly_transcript_error("empty")) from exc
     except Exception as exc:  # noqa: BLE001
-        raise ValueError(f"Failed to fetch transcript: {exc}") from exc
+        raise ValueError(_friendly_transcript_error(f"Failed to fetch transcript: {exc}")) from exc
 
     parts = [snippet.text for snippet in fetched]
     text = _normalize_text(parts, max_chars)
@@ -82,7 +172,6 @@ def _fetch_via_transcript_api(video_id: str, max_chars: int) -> VideoTranscript:
 
 
 def _fetch_via_legacy_api(video_id: str, max_chars: int) -> VideoTranscript:
-    """Compatibility for youtube-transcript-api 0.6.x (broken against current YouTube)."""
     from youtube_transcript_api import YouTubeTranscriptApi
     from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 
@@ -97,14 +186,11 @@ def _fetch_via_legacy_api(video_id: str, max_chars: int) -> VideoTranscript:
                 transcript = next(iter(transcript_list))
         entries = transcript.fetch()
     except (TranscriptsDisabled, VideoUnavailable, NoTranscriptFound) as exc:
-        raise ValueError(str(exc) or "No transcript available for this video.") from exc
+        raise ValueError(_friendly_transcript_error(str(exc) or "No transcript available.")) from exc
     except ParseError as exc:
-        raise ValueError(
-            "Transcript fetch failed (empty YouTube response). Run: "
-            "pip install -U 'youtube-transcript-api>=1.2.0' yt-dlp"
-        ) from exc
+        raise ValueError(_friendly_transcript_error("empty")) from exc
     except Exception as exc:  # noqa: BLE001
-        raise ValueError(f"Failed to fetch transcript: {exc}") from exc
+        raise ValueError(_friendly_transcript_error(f"Failed to fetch transcript: {exc}")) from exc
 
     parts = [entry.get("text", "") for entry in entries]
     text = _normalize_text(parts, max_chars)
@@ -149,7 +235,6 @@ def _parse_caption_payload(url: str, body: str) -> list[str]:
                     parts.append(piece)
         return parts
 
-    # VTT / plain-ish text fallback
     lines: list[str] = []
     for line in body.splitlines():
         stripped = line.strip()
@@ -166,7 +251,7 @@ def _fetch_via_ytdlp(video_id: str, max_chars: int) -> VideoTranscript:
         import yt_dlp
     except ImportError as exc:
         raise ValueError(
-            "Primary transcript API failed and yt-dlp is not installed. "
+            "Couldn't read captions with the primary method, and yt-dlp isn't installed. "
             "Run: pip install -U 'youtube-transcript-api>=1.2.0' yt-dlp"
         ) from exc
 
@@ -181,20 +266,22 @@ def _fetch_via_ytdlp(video_id: str, max_chars: int) -> VideoTranscript:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception as exc:  # noqa: BLE001
-        raise ValueError(f"yt-dlp could not load this video: {exc}") from exc
+        raise ValueError(_friendly_transcript_error(f"Could not load this video: {exc}")) from exc
 
     caption_url, language = _pick_caption_url(info)
     if not caption_url:
-        raise ValueError("No captions/subtitles found for this video.")
+        raise ValueError(_friendly_transcript_error("no captions"))
 
     try:
         response = httpx.get(caption_url, timeout=30.0, follow_redirects=True)
         response.raise_for_status()
         parts = _parse_caption_payload(caption_url, response.text)
     except Exception as exc:  # noqa: BLE001
-        raise ValueError(f"Failed to download captions via yt-dlp: {exc}") from exc
+        raise ValueError(_friendly_transcript_error(f"Failed to download captions: {exc}")) from exc
 
     text = _normalize_text(parts, max_chars)
+    duration = info.get("duration")
+    duration_seconds = int(duration) if isinstance(duration, (int, float)) and duration > 0 else None
     return VideoTranscript(
         video_id=video_id,
         title=info.get("title"),
@@ -202,6 +289,8 @@ def _fetch_via_ytdlp(video_id: str, max_chars: int) -> VideoTranscript:
         language=language,
         text=text,
         char_count=len(text),
+        duration_seconds=duration_seconds,
+        duration_hint=format_duration(duration_seconds) if duration_seconds else None,
     )
 
 
@@ -211,14 +300,13 @@ def fetch_transcript(video_id: str, max_chars: int) -> VideoTranscript:
     try:
         return _fetch_via_transcript_api(video_id, max_chars)
     except ValueError as exc:
-        errors.append(f"transcript-api: {exc}")
+        errors.append(str(exc))
 
     try:
         return _fetch_via_ytdlp(video_id, max_chars)
     except ValueError as exc:
-        errors.append(f"yt-dlp: {exc}")
+        errors.append(str(exc))
 
-    raise ValueError(
-        "Could not fetch a transcript for this video. "
-        + " | ".join(errors)
-    )
+    # Prefer the friendliest / most specific message
+    primary = errors[0] if errors else "Unknown transcript error."
+    raise ValueError(primary)

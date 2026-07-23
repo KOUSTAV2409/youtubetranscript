@@ -39,6 +39,29 @@ npm run dev
 
 Open http://localhost:5173
 
+## Deploy (Render + Vercel)
+
+### Backend on Render
+
+1. Push this repo to GitHub.
+2. [Render](https://render.com) → **New → Blueprint** → select the repo (uses `render.yaml`),  
+   **or** **New → Web Service** with:
+   - Root directory: `backend`
+   - Build: `pip install -r requirements.txt`
+   - Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+3. Set env vars in the dashboard:
+   - `OPENAI_API_KEY` (required)
+   - `CORS_ORIGINS` = your Vercel URL, e.g. `https://your-app.vercel.app`
+   - `DATABASE_PATH` = `data/cache.db` (ephemeral on free tier)
+4. Confirm `GET /health` returns `{"ok": true}`.
+
+### Frontend on Vercel
+
+1. Import the same repo → root directory `frontend`
+2. Build: `npm run build` · Output: `dist`
+3. Env: `VITE_API_BASE` = `https://your-backend.onrender.com` (no trailing slash)
+4. After deploy, update Render `CORS_ORIGINS` to the Vercel URL and redeploy the API if needed.
+
 ## API
 
 `POST /analyze`

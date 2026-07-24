@@ -39,7 +39,15 @@ export default function App() {
 
       setResult(data.result);
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      const raw = err.message || "Something went wrong";
+      // Browser often labels Render cold-start / 522 timeouts as CORS "Failed to fetch".
+      if (/failed to fetch|networkerror|load failed/i.test(raw)) {
+        setError(
+          "Couldn’t reach the API (Render free tier may be waking up). Wait ~30s and Retry."
+        );
+      } else {
+        setError(raw);
+      }
     } finally {
       setLoading(false);
     }
@@ -121,6 +129,7 @@ export default function App() {
               {loading ? "Analyzing…" : "Analyze"}
             </button>
           </div>
+
           {loading && (
             <div className="progress-track" aria-hidden="true">
               <div className="progress-fill" />

@@ -48,10 +48,21 @@ Open http://localhost:5173
 1. Push this repo; open [Render → New → Blueprint](https://dashboard.render.com/blueprints).
 2. Select repo **youtubetranscript**, branch **`koustav`**.
 3. Apply the Blueprint (`worthwatch-backend`).
-4. In the service → **Environment**, set `OPENAI_API_KEY`.
+4. In the service → **Environment**, set:
+   - `OPENAI_API_KEY`
 5. Deploy → open `https://<service>.onrender.com/health` (expect `{"ok":true}`).
 
 `CORS_ORIGINS` defaults to `*` so the Vercel frontend can call the API immediately. Tighten it to your Vercel URL later.
+
+### YouTube IP blocks on Render (important)
+
+YouTube blocks most cloud/datacenter IPs. **Retrying does not fix this.**
+
+**Options for one-click auto-fetch:**
+
+1. **Run the backend locally** (free) — captions work from your home IP. Point Vercel at a tunnel, or use `./setup.sh` fully local.
+2. **Try `YOUTUBE_PROXY_URL`** (free proxies usually fail — same datacenter block).
+3. **Webshare Residential** — set `WEBSHARE_PROXY_USERNAME` / `WEBSHARE_PROXY_PASSWORD` on Render for reliable cloud fetch.
 
 **Manual Web Service (no Blueprint):** root `backend`, Docker runtime, Dockerfile path `./Dockerfile`, same env vars.
 
@@ -59,8 +70,9 @@ Open http://localhost:5173
 
 1. Import the same repo → root directory `frontend`
 2. Build: `npm run build` · Output: `dist`
-3. Env: `VITE_API_BASE` = `https://your-backend.onrender.com` (no trailing slash)
-4. After deploy, update Render `CORS_ORIGINS` to the Vercel URL and redeploy the API if needed.
+3. Env: set `VITE_API_BASE` to your Render URL (no trailing slash), e.g. `https://your-service.onrender.com`
+4. Optional same-origin proxy: copy `frontend/vercel.json.example` → `vercel.json`, replace `YOUR-BACKEND` with your Render host, leave `VITE_API_BASE` unset so the app uses `/api`
+5. After deploy, update Render `CORS_ORIGINS` to include your Vercel URL if not using `*`
 
 ## API
 

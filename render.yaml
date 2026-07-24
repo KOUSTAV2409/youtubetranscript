@@ -22,3 +22,8 @@ services:
         value: "*"
       - key: DATABASE_PATH
         value: /app/data/cache.db
+      # YouTube blocks Render IPs — set these after buying Webshare Residential
+      - key: WEBSHARE_PROXY_USERNAME
+        sync: false
+      - key: WEBSHARE_PROXY_PASSWORD
+        sync: false

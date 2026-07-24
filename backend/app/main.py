@@ -21,9 +21,9 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="WorthWatch API", version="0.2.0", lifespan=lifespan)
 
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
-# Empty or "*" → allow all (first deploy / Vercel preview friendly).
+# Empty, "*", or list containing "*" → allow all (Vercel + previews).
 # Credentials must be off when using wildcard origins.
-allow_all = not origins or origins == ["*"]
+allow_all = not origins or "*" in origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if allow_all else origins,
@@ -66,7 +66,7 @@ async def analyze(body: AnalyzeRequest):
             status_code=400,
             detail=(
                 f"Could not read this video's captions. {exc} "
-                "Try Re-analyze in a minute, or pick a video with subtitles."
+                "Try again in a minute, or run the API on a home network / with a residential proxy."
             ),
         ) from exc
 
